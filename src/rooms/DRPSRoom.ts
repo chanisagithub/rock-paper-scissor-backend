@@ -17,13 +17,12 @@ class GameState extends Schema {
   @type("number") maxRounds: number = 3;
 }
 
-interface SecureJoinOptions {
+interface JoinOptions {
   playerUuid: string;
   playerName: string;
   nftContractAddress?: string;
   nftTokenId?: string;
   nftImageUrl?: string;
-  token: string; // JWT token from server
 }
 
 export class DRPSRoom extends Room<GameState> {
@@ -44,22 +43,14 @@ export class DRPSRoom extends Room<GameState> {
     });
   }
 
-  async onAuth(client: Client, options: SecureJoinOptions) {
-    try {
-      const decoded = jwt.verify(options.token, process.env.JWT_SECRET || "your_jwt_secret") as any;
-      if (decoded.playerUuid !== options.playerUuid) {
-        return false;
-      }
-      // Attach decoded data to client for later use
-      client.auth = decoded;
-      return true;
-    } catch (error) {
-      console.error("Authentication failed:", error);
-      return false;
-    }
+  // Allow all connections without authentication
+  onAuth(client: Client, options: JoinOptions) {
+    console.log("Client authenticating:", client.sessionId, options.playerName);
+    return true; // Always allow connection
   }
 
-  onJoin(client: Client, options: SecureJoinOptions) {
+  // Remove authentication requirement - direct room access
+  onJoin(client: Client, options: JoinOptions) {
     console.log(client.sessionId, "joined!", options.playerName);
 
     const player = new PlayerSchema();
